@@ -1,0 +1,164 @@
+i have a postgres database with the following tables: media_output and media_copies media_programs and media_types.
+the table media_output has the following columns:
+media_id (which is the primary key), title, media_date, author, media_link.
+the table media_copies has id, media_id (related to media_id in media_output table), link which is a url
+the media_programs has id, media_id (related to media_id in media_output table), media_program (which is a shorttext of size 200)
+the media_types table has type_id (unique id) media_id (related to media_id in media_output table) and media_type (text) columns
+
+and i have an excel table having the following columns:
+Title, Date, URL, Categories, Tags, Programs, lims_post_copies, lims_copies_count, Author Username
+i want a python code that imports the excel table to the database, using the following constraints:
+Title column in excel goes to title column in media_output table.
+Date column in excel goes to date column in media_output table, but the time must be removed, keep only the date.
+URL column in excel must go to media_link column in media_output table.
+for the Categories column in excel, the cell contains multiple information, if it contains one the programs that can be found in the database table programs_list, column program_name, that program must be added as a row in media_programs table in the database with the correct media_id for this row in media_output table (all programs in that cell must be added)
+this cell will be used also to fill the media_types table, by checking the types_list table, type_name column, all items found in table and in excel cells of column "categories" but be added as rows in media_types table with the appropriate media_id
+the other columns in the excel can be disregarded
+
+///////////////////////////////////////////////
+import description
+the categories column contain multiple categories separated by '|'.
+the categories column must be divided to two: Output and Program according to the following:
+i have two csv files: media_types.csv and media_programs.csv
+in the media_types.csv there are two columns:
+Category_name and Media_type, Category_name is the name found in the main csv
+media-type is the name of the output that i want it to be saved
+same for media_programs.csv
+there's category_name and program_name columns
+
+
+##########################################################
+#
+table to db
+i have this code that imports a csv and display it as table according to some logic. i want to change that code in a way that it is imported to my postgres database. 
+<?php
+$page_title = "LIME Posts Import";
+require_once('functions.php');
+require_once('config.php');
+include("header.php"); 
+
+if (!$is_admin) {
+  echo "Access denied.";
+  exit;
+}
+
+// Load the media types and programs into associative arrays
+$media_types = array();
+$media_programs = array();
+$types_file = fopen('media_types.csv', 'r');
+$programs_file = fopen('media_programs.csv', 'r');
+
+// Load media types
+while (($data = fgetcsv($types_file)) !== false) {
+    $category_name = $data[0];
+    $media_type = $data[1];
+    $media_types[$category_name] = $media_type;
+}
+
+// Load media programs
+while (($data = fgetcsv($programs_file)) !== false) {
+    $category_name = $data[0];
+    $program_name = $data[1];
+    $media_programs[$category_name] = $program_name;
+}
+
+fclose($types_file);
+fclose($programs_file);
+// Load the LIME posts CSV file
+$file = fopen('export-2023-march.csv', 'r');
+$header = fgetcsv($file);
+
+$column_indices = array();
+
+// Map the column names to their indices
+foreach ($header as $i => $column_name) {
+    $column_indices[$column_name] = $i;
+}
+
+echo "<table>";
+echo "<tr>";
+echo "<th>Title</th>";
+echo "<th>Date</th>";
+echo "<th>Permalink</th>";
+echo "<th>Output</th>";
+echo "<th>Program</th>";
+echo "</tr>";
+
+while (($data = fgetcsv($file)) !== false) {
+    // Extract data using column names instead of indices
+    $title = $data[$column_indices['Title']];
+    $date = date('Y-m-d', strtotime($data[$column_indices['Date']]));
+    $permalink = $data[$column_indices['Permalink']];
+    $categories = $data[$column_indices['Categories']];
+
+    // Split the categories by the '|' delimiter
+    $category_list = explode('|', $categories);
+
+    // Initialize the output and program names
+    $output = "";
+    $program = "";
+
+    // Look up the media type and program for each category
+    foreach ($category_list as $category) {
+      if (isset($media_types[$category])) {
+          if (!empty($output)) { // Check if $output is empty
+              $output .= ', '; // Add a comma separator only if $output is not empty
+          }
+          $output .= $media_types[$category];
+      }
+      if (isset($media_programs[$category])) {
+          if (!empty($program)) { // Check if $program is empty
+              $program .= ', '; // Add a comma separator only if $program is not empty
+          }
+          $program .= $media_programs[$category];
+      }
+  }
+    
+    echo "<tr>";
+    echo "<td>$title</td>";
+    echo "<td>$date</td>";
+    echo "<td>$permalink</td>";
+    echo "<td>$output</td>";
+    echo "<td>$program</td>";
+    echo "</tr>";
+}
+
+echo "</table>";
+fclose($file);
+?>
+
+i will give you the tables and relations in my database:
+the database has the following tables: media_output and media_copies media_programs and media_types.
+the table media_output has the following columns:
+media_id (which is the primary key), title, media_date, author, media_link.
+the table media_copies has id, media_id (related to media_id in media_output table), link which is a url
+the media_programs has id, media_id (related to media_id in media_output table), program (which is a shorttext of size 200)
+the media_types table has type_id (unique id) media_id (related to media_id in media_output table) and media_name (text) columns
+
+so i need a code that checks the permalink of each row in the csv, and compare it with the link column in media_output. 
+if the permalink exists, it means the record already exists, i only need to update it's values.
+if the permalink doesn't exist, i need to create a new row in media_output.
+the "Output" column in the table created in my code belongs to the media_types table found in the database.
+each media_output row must have: title, permalink and date
+each media_programs row must have one program that we found in programs column, so all programs must be added, each on a row
+same for media_types table in the database, which is named "Output" in the html table created in my code.
+can you help me with that code?
+
+
+
+
+/////////////////////////////////////////////////
+description for importing copies to db from the combined.xlsx file
+i have a postgres database with the following tables: media_output and media_copies media_programs and media_types.
+the table media_output has the following columns:
+media_id (which is the primary key), title, media_date, author, media_link.
+the table media_copies has id, media_id (related to media_id in media_output table), link which is a url
+the media_programs has id, media_id (related to media_id in media_output table), media_program (which is a shorttext of size 200)
+the media_types table has type_id (unique id) media_id (related to media_id in media_output table) and media_type (text) columns
+now i want to import a csv to this database in this way:
+the csv has many columns, but im interested in three columns (not case sensitive):
+original_link: it contains a link that must be found in media_output table in the database.
+copy_link: it contains links.
+original_copy: can contain either "copy"or "original" (not case sensitive)
+
+i want a php code that imports only the copies, not the original into media_copies table. to know which media_id you must compare the original_link column with the link column in media_output table in the tadabase

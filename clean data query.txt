@@ -1,0 +1,35 @@
+BEGIN;
+
+-- Step 1: Identify the media_id values that are not present in media_output
+WITH unreferenced_media_ids AS (
+  SELECT DISTINCT media_id
+  FROM (
+    SELECT media_id FROM media_copies
+    UNION ALL
+    SELECT media_id FROM media_programs
+  ) AS t1
+  LEFT JOIN media_output AS t2
+  ON t1.media_id = t2.media_id
+  WHERE t2.media_id IS NULL
+),
+
+-- Step 2: Delete the unreferenced rows from media_copies
+deleted_copies AS (
+  DELETE FROM media_copies
+  WHERE media_id IN (
+    SELECT media_id FROM unreferenced_media_ids
+  )
+  RETURNING *
+),
+
+-- Step 3: Delete the unreferenced rows from media_programs
+deleted_programs AS (
+  DELETE FROM media_programs
+  WHERE media_id IN (
+    SELECT media_id FROM unreferenced_media_ids
+  )
+  RETURNING *
+);
+
+-- Step 4: Commit the transaction
+COMMIT;

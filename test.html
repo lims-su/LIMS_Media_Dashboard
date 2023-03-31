@@ -1,0 +1,83 @@
+<table id="my-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Phone</th>
+      <th>Gender</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>John Doe</td>
+      <td>john@example.com</td>
+      <td>555-1234</td>
+      <td>M</td>
+    </tr>
+    <tr>
+      <td>Jane Smith</td>
+      <td>jane@example.com</td>
+      <td>555-5678</td>
+      <td>M</td>
+    </tr>
+    <tr>
+      <td>Bob Johnson</td>
+      <td>bob@example.com</td>
+      <td>555-9012</td>
+      <td>F</td>
+    </tr>
+    <tr>
+        <td>Bob</td>
+        <td>bob@e</td>
+        <td>55</td>
+        <td>M</td>
+    </tr>
+  </tbody>
+</table>
+
+<script>
+const table = document.getElementById('my-table');
+const tableRows = table.querySelectorAll('tbody tr');
+const filterColumns = ["Phone", "Gender"];
+
+// Get unique values for each filter column
+const uniqueValues = {};
+table.querySelectorAll('thead th').forEach((header, index) => {
+  const columnName = header.textContent.trim();
+  if (filterColumns.includes(columnName)) {
+    const column = Array.from(table.querySelectorAll(`tbody td:nth-child(${index + 1})`));
+    const values = Array.from(new Set(column.map(td => td.textContent.trim())));
+    uniqueValues[index] = values;
+
+    // Create dropdown menu for each filter column
+    const dropdown = document.createElement('select');
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'All';
+    dropdown.appendChild(defaultOption);
+    values.forEach(value => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      dropdown.appendChild(option);
+    });
+    dropdown.addEventListener('change', () => filterTable());
+    header.appendChild(dropdown);
+  }
+});
+
+// Filter table based on selected values in filter columns
+function filterTable() {
+  const filters = Array.from(table.querySelectorAll('thead select')).map(dropdown => dropdown.value.trim().toLowerCase());
+  tableRows.forEach(row => {
+    if (row.style.display !== 'none') { // Add this check to skip rows that are hidden
+      const matches = filterColumns.every((column, index) => {
+        const columnIndex = Array.from(table.querySelectorAll('thead th')).findIndex(header => header.textContent.trim() === column);
+        return filters[index] === '' || row.cells[columnIndex].textContent.trim().toLowerCase() === filters[index];
+      });
+      row.style.display = matches ? '' : 'none';
+    }
+  });
+}
+
+</script>
